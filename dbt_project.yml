@@ -1,0 +1,88 @@
+# ============================================================
+# Marketing Analytics Warehouse — dbt Project Configuration
+# ============================================================
+# Purpose : B2B SaaS RevOps — Marketing Module
+# Stack   : DuckDB (local dev) + dbt Core
+# Author  : Data Engineering Team
+# Updated : 2026-04-05
+# ============================================================
+
+name: 'marketing_warehouse'
+version: '1.0.0'
+require-dbt-version: ">=1.5.0"
+
+profile: 'marketing_db'
+
+# ------------------------------------
+# Path configuration
+# ------------------------------------
+model-paths:      ["models"]
+analysis-paths:   ["analyses"]
+test-paths:       ["tests"]
+seed-paths:       ["seeds"]
+macro-paths:      ["macros"]
+snapshot-paths:   ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ------------------------------------
+# Seed configuration
+# All seeds = raw source extracts
+# ------------------------------------
+seeds:
+  marketing_warehouse:
+    +schema: raw
+    +quote_columns: false
+
+    # Paid Ads
+    google_ads:
+      +schema: raw_google_ads
+    meta_ads:
+      +schema: raw_meta_ads
+    linkedin_ads:
+      +schema: raw_linkedin_ads
+
+    # Marketing Automation
+    hubspot:
+      +schema: raw_hubspot
+
+    # Web Analytics
+    ga4:
+      +schema: raw_ga4
+
+    # Customer Data Platform
+    segment:
+      +schema: raw_segment
+
+# ------------------------------------
+# Model layer configuration
+# ------------------------------------
+models:
+  marketing_warehouse:
+
+    # ── STAGING ──────────────────────────────────────────────
+    # One model per source table.
+    # Rename columns, cast types, light cleaning.
+    # Materialised as views (no storage cost, always fresh).
+    staging:
+      +materialized: view
+      +schema: staging
+
+    # ── INTERMEDIATE ─────────────────────────────────────────
+    # Business logic, deduplication, cross-source joins.
+    # Materialised as TABLE so DuckDB doesn't plan a 4-level deep view
+    # chain with UNION ALL + window functions (triggers assertion crash).
+    intermediate:
+      +materialized: table
+
+    # ── MARTS ─────────────────────────────────────────────────
+    # Final business-facing tables. Metabase connects here.
+    # Materialised as tables for dashboard query performance.
+    marts:
+      +materialized: table
+      +schema: marts
+      marketing:
+        +materialized: table
+        +schema: marts

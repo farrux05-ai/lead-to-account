@@ -1,0 +1,41 @@
+version: 2
+
+sources:
+  - name: google_ads
+    description: Google Ads raw source data extracted via Fivetran/Airbyte (simulated via dbt seeds)
+    schema: main_raw_google_ads
+    tables:
+      - name: google_ads_campaigns
+      - name: google_ads_performance_daily
+
+  - name: meta_ads
+    description: Meta (Facebook/Instagram) Ads raw source data
+    schema: main_raw_meta_ads
+    tables:
+      - name: meta_ads_campaigns
+      - name: meta_ads_performance_daily
+
+  - name: linkedin_ads
+    description: LinkedIn Ads raw source data
+    schema: main_raw_linkedin_ads
+    tables:
+      - name: linkedin_ads_campaigns
+      - name: linkedin_ads_performance_daily
+
+  - name: hubspot
+    description: HubSpot CRM raw data
+    schema: main_raw_hubspot
+    tables:
+      - name: hubspot_contacts
+
+  - name: ga4
+    description: Google Analytics 4 sessions data
+    schema: main_raw_ga4
+    tables:
+      - name: ga4_sessions_daily
+
+  - name: segment
+    description: Segment CDP product tracked events
+    schema: main_raw_segment
+    tables:
+      - name: segment_tracks

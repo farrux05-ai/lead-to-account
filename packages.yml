@@ -1,0 +1,10 @@
+# ============================================================
+# dbt Package Dependencies
+# ============================================================
+# dbt_utils  : Cross-db macros (generate_surrogate_key,
+#              date_spine, safe_divide, etc.)
+# ============================================================
+
+packages:
+  - package: dbt-labs/dbt_utils
+    version: [">=1.1.0", "<2.0.0"]
