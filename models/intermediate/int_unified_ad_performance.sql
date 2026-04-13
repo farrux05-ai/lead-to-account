@@ -32,7 +32,7 @@ WITH google_performance AS (
         metric_date,
         CAST(daily_impressions AS INTEGER)      AS daily_impressions,
         CAST(daily_clicks AS INTEGER)           AS daily_clicks,
-        CAST(daily_spend_original_currency AS DOUBLE) AS daily_spend_local,
+        ROUND((daily_spend_raw / spend_divisor), 6) AS daily_spend_local,
         currency_code
     FROM {{ ref('stg_google_ads__performance_daily') }}
 ),
@@ -44,7 +44,7 @@ meta_performance AS (
         metric_date,
         CAST(daily_impressions AS INTEGER)      AS daily_impressions,
         CAST(daily_clicks AS INTEGER)           AS daily_clicks,
-        CAST(daily_spend_original_currency AS DOUBLE) AS daily_spend_local,
+        ROUND((daily_spend_raw / spend_divisor), 6) AS daily_spend_local,
         currency_code
     FROM {{ ref('stg_meta_ads__performance_daily') }}
 ),
@@ -56,19 +56,17 @@ linkedin_performance AS (
         metric_date,
         CAST(daily_impressions AS INTEGER)      AS daily_impressions,
         CAST(daily_clicks AS INTEGER)           AS daily_clicks,
-        CAST(daily_spend_usd AS DOUBLE)         AS daily_spend_local,
+        ROUND((daily_spend_raw / spend_divisor), 6) AS daily_spend_local,
         currency_code
     FROM {{ ref('stg_linkedin_ads__performance_daily') }}
 ),
 
--- Explicit casts on every branch of the UNION prevents DuckDB from entering
--- ambiguous type resolution during the physical planning stage.
 unioned AS (
-    SELECT * FROM google_performance
+    SELECT channel, source_campaign_id, metric_date, daily_impressions, daily_clicks, CAST(daily_spend_local AS DOUBLE) AS daily_spend_local, currency_code FROM google_performance
     UNION ALL
-    SELECT * FROM meta_performance
+    SELECT channel, source_campaign_id, metric_date, daily_impressions, daily_clicks, CAST(daily_spend_local AS DOUBLE) AS daily_spend_local, currency_code FROM meta_performance
     UNION ALL
-    SELECT * FROM linkedin_performance
+    SELECT channel, source_campaign_id, metric_date, daily_impressions, daily_clicks, CAST(daily_spend_local AS DOUBLE) AS daily_spend_local, currency_code FROM linkedin_performance
 ),
 
 final AS (
