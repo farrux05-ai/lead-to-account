@@ -1,0 +1,8 @@
+snapshots:
+  - name: snap_hubspot_contacts_lifecycle
+    relation: source('hubspot', 'hubspot_contacts')
+    config:
+      target_schema: snapshots
+      strategy: check
+      unique_key: contact_id
+      check_cols: ['lifecycle_stage']

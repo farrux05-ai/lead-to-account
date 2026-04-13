@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: dim_accounts
+    description: "B2B Virtual Accounts dimension based on grouped email domains. Filters out free emails."
+    columns:
+      - name: account_key
+        description: "Primary surrogate key for the account"
+        tests:
+          - unique
+          - not_null
+      - name: email_domain
+        description: "The unique B2B domain acting as a grouping factor."
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_not_be_in_set:
+              value_set: ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com']
+      - name: account_original_source
+        description: "Origin source of the first touch (champion) contact."
+      - name: account_champion_contact_id
+        description: "Contact ID of the first person who signed up from this account."
+        tests:
+          - not_null
+      - name: account_first_touch_at
+        description: "Timestamp when the champion lead was created."
+        tests:
+          - not_null
+      - name: total_contacts_in_account
+        description: "Number of leads associated with this account."
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1

@@ -17,10 +17,16 @@
 --   bounce rate and is the GA4-native metric (bounce rate is deprecated).
 -- ============================================================================
 
-{{ config(materialized='table') }}
+{{ config(
+    materialized='incremental',
+    unique_key=['date_day', 'traffic_source', 'traffic_medium', 'traffic_campaign']
+) }}
 
 WITH sessions AS (
     SELECT * FROM {{ ref('stg_ga4__sessions_daily') }}
+    {% if is_incremental() %}
+    WHERE metric_date >= (SELECT MAX(date_day) FROM {{ this }})
+    {% endif %}
 ),
 
 date_dim AS (
