@@ -1,6 +1,11 @@
 -- ============================================================================
 -- MODEL: stg_hubspot__deals
 -- ============================================================================
+-- GRAIN: One row per unique deal_id.
+-- DEDUP STRATEGY: If the same deal_id exists in both the historical seed and
+--   the dlt incremental source, the most recently loaded version wins.
+--   This prevents double-counting revenue on the dashboard.
+-- ============================================================================
 
 WITH seed_source AS (
     SELECT * FROM {{ source('hubspot', 'hubspot_deals') }}
@@ -34,6 +39,18 @@ unioned AS (
         closed_at,
         _loaded_at
     FROM dlt_source
+),
+
+-- Deduplication: Keep only the most recent version of each deal.
+-- DLT records will naturally win as they have a later _loaded_at timestamp.
+deduped AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY deal_id
+            ORDER BY _loaded_at DESC
+        ) AS _row_num
+    FROM unioned
 )
 
 SELECT
@@ -45,4 +62,5 @@ SELECT
     TRY_CAST(created_at AS TIMESTAMP)   AS created_at,
     TRY_CAST(closed_at AS TIMESTAMP)    AS closed_at,
     TRY_CAST(_loaded_at AS TIMESTAMP)   AS _loaded_at
-FROM unioned
+FROM deduped
+WHERE _row_num = 1

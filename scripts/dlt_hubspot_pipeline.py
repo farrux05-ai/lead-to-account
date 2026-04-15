@@ -1,6 +1,12 @@
 import dlt
+import os
 import random
 from datetime import datetime
+
+# The DuckDB path and dataset name are configurable via environment variables.
+# This makes the pipeline portable across dev/staging/prod environments.
+DUCKDB_PATH = os.environ.get("DUCKDB_PATH", "dev.duckdb")
+DATASET_NAME = os.environ.get("DLT_DATASET_NAME", "main_raw_hubspot")
 
 # 1. Define the Data Source (Mock API)
 @dlt.resource(name="hubspot_deals_incremental", write_disposition="append")
@@ -9,6 +15,10 @@ def fetch_hubspot_deals_from_api():
     Mock API generator wrapped in a DLT resource.
     In a real production project, this would look like: 
     yield requests.get('https://api.hubapi.com/crm/v3/objects/deals', headers=auth).json()['results']
+    
+    Production swap:
+        - Set HUBSPOT_API_KEY env variable
+        - Replace yield below with actual API call
     """
     b2b_domains = ['acme.com', 'stark.com', 'wayne.com', 'oscorp.com', 'cyberdyne.com']
     stages = ['discovery', 'presentation', 'negotiation', 'closed_won', 'closed_lost']
@@ -37,11 +47,12 @@ def fetch_hubspot_deals_from_api():
 
 # 2. Define the Pipeline
 if __name__ == "__main__":
-    # Configure DLT to push securely to our local DuckDB warehouse
+    # Configure DLT to push securely to our local DuckDB warehouse.
+    # Override via environment variables for staging/production deployments.
     pipeline = dlt.pipeline(
         pipeline_name="hubspot_crm_pipeline",
-        destination=dlt.destinations.duckdb("dev.duckdb"),
-        dataset_name="main_raw_hubspot" # Targets the exact schema dbt expects!
+        destination=dlt.destinations.duckdb(DUCKDB_PATH),
+        dataset_name=DATASET_NAME  # Targets the exact schema dbt expects!
     )
     
     # 3. Run the Pipeline (Extract -> Normalize -> Load)

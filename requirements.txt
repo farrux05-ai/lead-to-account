@@ -1,0 +1,29 @@
+# ============================================================
+# B2B RevOps Analytics Warehouse — Python Dependencies
+# ============================================================
+# Install: pip install -r requirements.txt
+# Python:  3.9+
+# ============================================================
+
+# ── Data Warehouse ──────────────────────────────────────────
+duckdb==1.5.1
+
+# ── dbt Core + DuckDB Adapter ──────────────────────────────
+dbt-core==1.11.7
+dbt-duckdb==1.10.1
+
+# ── dbt Packages (install via: dbt deps) ───────────────────
+# dbt-utils, dbt-expectations are defined in packages.yml
+# Run `dbt deps` after installing Python dependencies.
+
+# ── Ingestion ──────────────────────────────────────────────
+dlt==1.25.0
+
+# ── Orchestration ──────────────────────────────────────────
+dagster==1.13.0
+dagster-webserver==1.13.0
+
+# ── Visualization ──────────────────────────────────────────
+streamlit==1.56.0
+plotly==6.7.0
+pandas==3.0.2
