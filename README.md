@@ -8,86 +8,84 @@
 
 ---
 
-## 📖 Project Overview
+## 🏗️ System Architecture
 
-This is a production-grade **Modern Data Stack (MDS)** implementation designed for **B2B SaaS Revenue Operations (RevOps)**. Unlike generic marketing dashboards, this project solves the critical disconnect between **Top-of-Funnel (ToFu)** marketing activity and **Bottom-of-Funnel (BoFu)** CRM revenue.
+Our Modern Data Stack (MDS) architecture is designed for speed, scale, and cross-channel visibility. It bridges the gap between Marketing activity and CRM Revenue.
 
-By unifying data from **Google Ads, Meta, LinkedIn, HubSpot, and Segment**, this warehouse provides a single source of truth for Sales and Marketing alignment.
+![Data Pipeline Architecture](screenshots/data_pipeline_architecture.svg)
 
-### 🎯 Key Business Problems Solved
-
-1.  **Lead-to-Account Matching (Identity Resolution):** Maps individual "leads" to "accounts" using email domain logic, allowing for true Account-Based Marketing (ABM) attribution.
-2.  **Revenue Attribution:** Connects marketing spend directly to Closed-Won deals. We attribute revenue to the *First Touch* of the entire company, not just the single converting contact.
-3.  **Pipeline Velocity Analysis:** Uses **SCD Type 2 (dbt Snapshots)** to track how long leads spend in each lifecycle stage (MQL -> SQL -> Deal), identifying bottleneck stages in the sales funnel.
-4.  **DRY Analytics Engineering:** Implements reusable Jinja macros to standardize ad performance across fragmented schemas (cents vs micros vs USD), reducing code volume by 80%.
-
----
-
-## 🛠️ The Tech Stack
-
-| Layer | Component | Description |
-|---|---|---|
-| **Ingestion** | **dlt** (Data Load Tool) | Automated ELT pipelines extracting from CRM APIs into DuckDB. |
-| **Warehouse** | **DuckDB** | Fast, local-first analytical engine powering the warehouse. |
-| **Transformation** | **dbt Core** | Dimensional modeling (Star Schema), snapshots, and automated testing. |
-| **Orchestration** | **Dagster** | Asset-based orchestration managing the sequential flow of Ingestion -> dbt. |
-| **Visualization** | **Streamlit** | Real-time Python dashboard for ROI and Pipeline tracking. |
+### The Functional Layers:
+*   **Ingestion (ELT):** **dlt** (Data Load Tool) extracts raw data from HubSpot and Mock APIs directly into DuckDB.
+*   **Warehouse:** **DuckDB** serves as the high-performance local analytical core.
+*   **Transformation & Modeling:** **dbt Core** handles the heavy lifting—from modular staging to complex identity resolution and final revenue marts.
+*   **Orchestration:** **Dagster** manages "Software-Defined Assets," ensuring that data is only transformed once the ingestion layer successfully lands.
+*   **BI & Visualization:** **Streamlit** provides an interactive, B2B-tailored cockpit for RevOps teams.
 
 ---
 
-## 🏛️ Warehouse Architecture
+## 📸 Live Full-Funnel Dashboard
 
-We follow a modular **Medallion-inspired** architecture within dbt:
+Our **Full-Funnel Platform** provides real-time visibility into the B2B revenue engine.
 
-*   **Staging (`stg_`)**: Standardized naming, `TRY_CAST` defensive typing, and `ROW_NUMBER` deduplication.
-*   **Intermediate (`int_`)**: The "Brain" of the warehouse. Handles Identity Resolution, Contact-to-Account mapping, and historical stage tracking.
-*   **Marts (`fct_`, `dim_`)**: Dashboard-ready tables.
-    *   `fct_pipeline_revenue`: The **Crown Jewel** linking marketing channels to actual dollars.
-    *   `dim_accounts`: A unified 360-view of B2B accounts.
+### 1. Revenue & ROI Overview
+Tracks Closed-Won dollars directly back to original marketing sources.
+![Revenue Performance](screenshots/kpi.png)
+
+### 2. Ad Efficiency (CPC & CTR)
+Monitors platform-wide spend and identifies high-engagement, low-cost channels.
+![Ad Efficiency](screenshots/platform_effciency.png)
+
+### 3. Traffic & Engagement (GA4)
+Visualizes daily session trends and traffic mix from Google Analytics 4.
+![GA4 Traffic](screenshots/traffic_source_daily_session.png)
+
+### 4. Lead Funnel & Velocity
+Tracks the progression of MQLs, SQLs, and Deals through the sales pipeline.
+![Lead Funnel](screenshots/lead_by_stage.png)
 
 ---
 
-## 📈 Dashboard Highlights
+## 🧠 Data Engineering & Lineage
 
-Our **Streamlit** application (`streamlit_app.py`) provides mission-critical metrics:
-*   **Total ROI (Return on Investment):** Real-time spend vs. won revenue.
-*   **Win Rate by Channel:** Which acquisition channels deliver the highest quality leads?
-*   **Daily Spend Trends:** Cross-channel spend monitoring.
+The warehouse architecture follows a strict **Medallion-inspired** modular structure. We ensure data integrity through 50+ automated dbt tests and detailed lineage tracking.
+
+![Data Lineage](screenshots/linage_of_data.png)
+
+### Key Engineering Features:
+*   **Identity Resolution:** Maps floating Leads to Virtual Accounts based on domain intelligence.
+*   **SCD Type 2 Tracking:** Uses dbt Snapshots to monitor historical CRM lifecycle changes.
+*   **Currency Normalization:** Standardizes multi-currency ad spend into a unified USD reporting layer using custom Jinja macros.
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Requirements
-* Python 3.9+
-* dbt-core
-
-### 2. Setup & Execution
+### 1. Setup & Execution
 ```bash
-# Clone the repository
+# Clone and enter the project
 git clone https://github.com/farrux05-ai/lead-to-account.git
 cd lead-to-account/my_marketing_project
 
-# Set up environment
+# Install dependencies
 pip install -r requirements.txt
 
-# Run the full orchestrated pipeline (DLT + dbt Build)
+# Run the full orchestrated pipeline (Injest + Model + Test)
 python scripts/dagster_orchestrator.py
 
-# Launch the dashboard
+# Launch the BI platform
 streamlit run streamlit_app.py
 ```
 
 ---
 
-## 🛡️ Data Quality & Testing
-We enforce strict data quality using `dbt_expectations`:
-*   **Domain Validity:** Ensures email domains are not free providers (Gmail/Yahoo) in the Account dimension.
-*   **Unique Keys:** Asserts surrogate key integrity across all fact tables.
-*   **Relationship Tests:** Validates that every Deal has an associated Account in the mart layer.
+## 🛡️ Data Quality
+We enforce strict B2B data quality using `dbt_expectations`:
+*   **Domain Validity:** Prevents free-tier emails (Gmail/Yahoo) from polluting account metrics.
+*   **Surrogate Integrity:** Ensures 100% join rates across dimensional and fact models.
+*   **Relationship Mapping:** Validates that every deal is anchored to a resolved account.
 
 ---
 
-## 🔗 Documentation
-Interactive lineage and data dictionary are hosted via GitHub Pages:
-👉 **[View Data Documentation](https://farrux05-ai.github.io/lead-to-account/)**
+## 🔗 Interactive Documentation
+The full model documentation, interactive lineage, and data dictionary are hosted here:
+👉 **[View Project Documentation](https://farrux05-ai.github.io/lead-to-account/)**
