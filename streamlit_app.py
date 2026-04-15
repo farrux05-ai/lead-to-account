@@ -3,6 +3,8 @@ import pandas as pd
 import duckdb
 import plotly.express as px
 
+import os
+
 # 1. Page Configuration
 st.set_page_config(
     page_title="RevOps Full-Funnel Analytics", 
@@ -19,7 +21,11 @@ into a unified B2B Revenue Operations dashboard. Powered by **dbt** and **DuckDB
 # 2. Data Connection
 @st.cache_resource
 def get_connection():
-    return duckdb.connect('dev.duckdb', read_only=True)
+    # Robust pathing: find dev.duckdb relative to this script
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(current_dir, 'dev.duckdb')
+    return duckdb.connect(db_path, read_only=True)
+
 
 @st.cache_data
 def load_all_data():
