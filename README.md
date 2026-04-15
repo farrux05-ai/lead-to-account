@@ -1,4 +1,4 @@
-# Lead-to-Account: B2B SaaS RevOps Revenue Engine 🚀
+# Lead-to-Account: B2B SaaS RevOps Revenue Engine
 
 > **High-Performance Marketing Analytics Warehouse** mapping the entire B2B Customer Journey — from anonymous Ad clicks to $100K+ Enterprise Deals.
 
