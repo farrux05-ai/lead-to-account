@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: int_identity_resolution
+    description: |
+      The core of B2B RevOps. 
+      This model resolves individual CRM contacts into 'Virtual Accounts' by:
+      1. Extracting domains from email addresses.
+      2. Filtering out free email providers (Gmail, etc.).
+      3. Applying window functions to find the first acquisition source for the entire account domain.
+    columns:
+      - name: source_contact_id
+        description: "Original CRM Contact ID."
+      - name: virtual_account_id
+        description: "Hashed ID representing the B2B company/domain."
+      - name: account_original_source
+        description: "The 'First Touch' source for the entire Account."
+
+  - name: int_unified_ad_performance
+    description: |
+      Unifies performance daily logs from Google, Meta, and LinkedIn.
+      Handles currency conversion and spend normalization (micros/cents to USD).
+      Flags records with spend but 0 impressions as anomalies.
+    columns:
+      - name: campaign_key
+        description: "Surrogate key for the campaign."
+      - name: daily_spend_usd
+        description: "Normalized spend in USD."
+      - name: is_anomaly
+        description: "True if spend > 0 but impressions = 0."
+
+  - name: int_unified_campaigns
+    description: "Combined dimensional data for all paid search and social campaigns."

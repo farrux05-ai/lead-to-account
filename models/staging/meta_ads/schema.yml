@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: stg_meta_ads__campaigns
+    description: "Standardized Meta (Facebook/Instagram) campaign data."
+    columns:
+      - name: source_campaign_id
+        description: "The original Meta campaign ID."
+        tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        description: "Name of the campaign as shown in Ads Manager."
+
+  - name: stg_meta_ads__performance_daily
+    description: "Daily metrics for Meta Ads. Spend is converted from cents to USD."
+    columns:
+      - name: source_campaign_id
+        description: "FK to stg_meta_ads__campaigns."
+      - name: metric_date
+        description: "The date performance occurred."
+      - name: daily_spend_raw
+        description: "Raw cost in cents."

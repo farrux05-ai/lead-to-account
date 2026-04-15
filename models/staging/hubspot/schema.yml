@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_hubspot__contacts
+    description: "Standardized HubSpot CRM contacts. Includes original source and identity information."
+    columns:
+      - name: source_contact_id
+        description: "Primary key for the contact in HubSpot."
+        tests:
+          - unique
+          - not_null
+      - name: email
+        description: "Contact email address. Used for domain extraction in ABM."
+        tests:
+          - not_null
+
+  - name: stg_hubspot__deals
+    description: "Hybrid HubSpot deals merging historical seed data and real-time DLT-ingested data. Deduplicated by deal_id."
+    columns:
+      - name: source_deal_id
+        description: "The unique ID for the deal."
+        tests:
+          - unique
+          - not_null
+      - name: amount_usd
+        description: "Total deal value in USD."
+      - name: deal_stage
+        description: "Current stage (closed_won, closed_lost, negotiation, etc)."

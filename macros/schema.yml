@@ -1,0 +1,21 @@
+version: 2
+
+macros:
+  - name: generate_stg_ad_performance
+    description: "Standardizes ad performance staging for different sources (Google, Meta, LinkedIn)."
+    arguments:
+      - name: source_name
+        description: "The dbt source name."
+      - name: table_name
+        description: "The dbt source table name."
+      - name: date_col
+        description: "The name of the date column in the source."
+      - name: spend_col
+        description: "The name of the spend column in the source."
+      - name: spend_divisor
+        description: "Divisor to convert raw spend to local currency (e.g. 1000000 for micros)."
+      - name: currency_col
+        description: "The name of the currency column."
+
+  - name: currency_conversions
+    description: "Standard conversion rates for mock data purposes."

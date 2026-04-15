@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: stg_segment__tracks
+    description: "Raw tracked events from Segment CDP. Standardizes user interaction data for funnel analysis."
+    columns:
+      - name: message_id
+        description: "Unique Segment message identifier."
+        tests:
+          - unique
+          - not_null
+
+      - name: event_name
+        description: "Name of the tracked action (e.g., signup, button_click)."
+      - name: anonymous_id
+        description: "ID for identifying a visitor before they sign up."

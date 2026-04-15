@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_google_ads__campaigns
+    description: "Standardized Google Ads campaign data. Maps internal campaign IDs to a unified format for cross-channel reporting."
+    columns:
+      - name: source_campaign_id
+        description: "The original Google Ads campaign ID."
+        tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        description: "Human-readable name of the campaign."
+      - name: campaign_status
+        description: "Status (Enabled, Paused, Removed)."
+      - name: is_active
+        description: "Boolean flag indicating if the campaign is currently running."
+
+  - name: stg_google_ads__performance_daily
+    description: "Daily performance metrics (spend, clicks, impressions) for Google Ads. Spend is converted from micros to USD."
+    columns:
+      - name: source_campaign_id
+        description: "FK to stg_google_ads__campaigns."
+        tests:
+          - not_null
+      - name: metric_date
+        description: "The date performance occurred."
+        tests:
+          - not_null
+      - name: daily_impressions
+        description: "Count of times an ad was shown."
+      - name: daily_clicks
+        description: "Count of times users clicked an ad."
+      - name: daily_spend_raw
+        description: "Raw cost in Google micros."
+      - name: currency_code
+        description: "Original currency (e.g., USD, EUR)."

@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_linkedin_ads__campaigns
+    description: "Standardized LinkedIn campaign data. LinkedIn campaigns correlate to 'Sponsored Content' or other ad types."
+    columns:
+      - name: source_campaign_id
+        description: "LinkedIn Campaign URN."
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_linkedin_ads__performance_daily
+    description: "Daily metrics for LinkedIn Ads. LinkedIn usually reports spend in decimal USD natively."
+    columns:
+      - name: source_campaign_id
+        description: "FK to stg_linkedin_ads__campaigns."
+      - name: metric_date
+        description: "The date of the report."
