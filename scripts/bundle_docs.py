@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 def bundle_dbt_docs(project_path):
     target_path = os.path.join(project_path, 'target')
@@ -24,32 +25,39 @@ def bundle_dbt_docs(project_path):
     manifest_json = json.dumps(manifest)
     catalog_json = json.dumps(catalog)
 
-    # Step 1: Look for the manifest and catalog variables in index.html
-    # In modern dbt, they look something like:
-    # o=[i("manifest","7.json")]
-    # p=[i("catalog","7.json")]
+    # Patterns to look for (different dbt versions have different minification)
+    patterns = [
+        # Pattern 1: n = [o("manifest", "manifest.json" + t), o("catalog", "catalog.json" + t)]
+        (r'n\s*=\s*\[o\("manifest",\s*"manifest.json"\s*\+\s*t\),\s*o\("catalog",\s*"catalog.json"\s*\+\s*t\)\]', 
+         f'n = [{{label: "manifest", data: {manifest_json}}}, {{label: "catalog", data: {catalog_json}}}]'),
+        
+        # Pattern 2: o=[i("manifest","any.json")]
+        (r'o=\[i\("manifest","[^"]+"\)\]', 
+         f'o=[{{label: "manifest", data: {manifest_json}}}]'),
+        
+        # Pattern 3: p=[i("catalog","any.json")]
+        (r'p=\[i\("catalog","[^"]+"\)\]', 
+         f'p=[{{label: "catalog", data: {catalog_json}}}]')
+    ]
 
-    # We use a simple replacement for the most common pattern
-    # The pattern in index.html is often minified.
-    
-    # Replacement for Manifest
-    # Search for the pattern o=[i("manifest","any_version.json")] and replace with data
-    import re
-    
-    # We use string find/replace to avoid the \u escape issue in re.sub
-    # We find the string that looks like o=[i("manifest","...")]
-    
-    manifest_target = re.search(r'o=\[i\("manifest","[^"]+"\)\]', html)
-    if manifest_target:
-        target_str = manifest_target.group(0)
-        html = html.replace(target_str, f'o=[{{label: "manifest", data: {manifest_json}}}]')
-        print("✅ Injected Manifest")
+    found_any = False
+    for pattern, replacement in patterns:
+        if re.search(pattern, html):
+            # Use a targeted replacement to avoid re.sub escape issues
+            # Actually, standard replace is safer for such large strings
+            match = re.search(pattern, html).group(0)
+            html = html.replace(match, replacement)
+            print(f"✅ Injected data using pattern: {pattern[:50]}...")
+            found_any = True
 
-    catalog_target = re.search(r'p=\[i\("catalog","[^"]+"\)\]', html)
-    if catalog_target:
-        target_str = catalog_target.group(0)
-        html = html.replace(target_str, f'p=[{{label: "catalog", data: {catalog_json}}}]')
-        print("✅ Injected Catalog")
+    if not found_any:
+        print("⚠️ Warning: No injection patterns found. The documentation might still try to load external files.")
+        # Fallback for some newer layouts that use MANIFEST.JSON INLINE DATA
+        if 'MANIFEST.JSON INLINE DATA' in html:
+            html = html.replace('"MANIFEST.JSON INLINE DATA"', manifest_json)
+            html = html.replace('"CATALOG.JSON INLINE DATA"', catalog_json)
+            print("✅ Injected data into placeholder strings.")
+            found_any = True
 
     output_file = os.path.join(docs_path, 'index.html')
     with open(output_file, 'w') as f:
