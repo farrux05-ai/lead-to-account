@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 
 # 1. Define the Data Source (Mock API)
-@dlt.resource(name="hubspot_deals", write_disposition="append")
+@dlt.resource(name="hubspot_deals_incremental", write_disposition="append")
 def fetch_hubspot_deals_from_api():
     """
     Mock API generator wrapped in a DLT resource.
@@ -13,14 +13,15 @@ def fetch_hubspot_deals_from_api():
     b2b_domains = ['acme.com', 'stark.com', 'wayne.com', 'oscorp.com', 'cyberdyne.com']
     stages = ['discovery', 'presentation', 'negotiation', 'closed_won', 'closed_lost']
     
-    # Simulate API fetching 5 new deals created "today"
+    # Simulate API fetching 20 new deals created "today"
     now_str = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     
-    print(f"📡 Fetching Deals from HubSpot API at {now_str}...")
+    print(f"📡 Fetching {20} Deals from HubSpot API at {now_str}...")
     
     deals_batch = []
-    for _ in range(5):
-        deal_stage = random.choice(stages)
+    for i in range(20):
+        # Force the first deal to be closed_won for dashboard visibility
+        deal_stage = 'closed_won' if i == 0 else random.choice(stages)
         deals_batch.append({
             "deal_id": f"HSDL_DLT_{random.randint(1000, 9999)}",
             "contact_id": f"HSCT{random.randint(1, 100):05d}",

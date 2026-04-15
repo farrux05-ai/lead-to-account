@@ -1,21 +1,28 @@
-# dbt artifacts
+# dbt
 target/
 dbt_packages/
+dbt_modules/
+logs/
 
-# DuckDB dev database
+# DuckDB
 *.duckdb
 *.duckdb.wal
 
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+*$py.class
 venv/
-
-# Environment
 .env
-*.env.local
 
-# OS
+# MacOS
 .DS_Store
-Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# dlt
+.dlt/
+pip_install.sh
+*pipeline_data/

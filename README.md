@@ -1,105 +1,93 @@
-# B2B SaaS RevOps: End-to-End Modern Data Stack
+# Lead-to-Account: B2B SaaS RevOps Revenue Engine 🚀
 
-> **A production-grade Analytics Engineering Data Platform** mapping the entire Customer Journey from Anonymous Ad Click (Marketing) to Enterprise Revenue (CRM), built with the Modern Data Stack.
+> **High-Performance Marketing Analytics Warehouse** mapping the entire B2B Customer Journey — from anonymous Ad clicks to $100K+ Enterprise Deals.
 
-![Status](https://img.shields.io/badge/Status-Active-success)
-![Stack](https://img.shields.io/badge/DB-DuckDB-orange)
-![dbt](https://img.shields.io/badge/dbt-1.11+-FF694B)
-![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B)
-![Dagster](https://img.shields.io/badge/Orchestrator-Dagster-7448FF)
-
-## 🏗️ Architecture
-
-This repository is transitioning from a standalone dbt project to a fully orchestrated **Modern Data Stack (MDS)**.
-
-```mermaid
-flowchart LR
-    subgraph Sources [Extract]
-        A(Google Ads) --> DLT
-        B(Meta Ads) --> DLT
-        C(HubSpot CRM) --> DLT
-        G(Segment) --> DLT
-    end
-
-    subgraph ELT [Ingestion - dlt]
-        DLT{dlt Pipelines}
-    end
-
-    subgraph Warehouse [DuckDB + dbt]
-        RAW[(Raw Data)]
-        STG[Staging]
-        INT[Intermediate]
-        MRT[Marts / Dimensions]
-        
-        RAW --> STG --> INT --> MRT
-    end
-
-    subgraph BI [Visualization]
-        ST[Streamlit App]
-    end
-
-    subgraph Orchestration [Dagster]
-        DAG([Software-Defined Assets])
-    end
-
-    DLT --> RAW
-    MRT --> ST
-    DAG -.-> DLT & Warehouse & ST
-```
+[![dbt Docs](https://img.shields.io/badge/Documentation-dbt--Docs-FF694B)](https://farrux05-ai.github.io/lead-to-account/)
+[![Stack](https://img.shields.io/badge/Stack-Modern--Data--Stack-blue)](https://github.com/farrux05-ai/lead-to-account)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
-## 🎯 B2B RevOps Problems Solved
+## 📖 Project Overview
 
-This is not a generic "SELECT * FROM sales" warehouse. It solves three of the hardest problems in B2B SaaS Analytics Engineering:
+This is a production-grade **Modern Data Stack (MDS)** implementation designed for **B2B SaaS Revenue Operations (RevOps)**. Unlike generic marketing dashboards, this project solves the critical disconnect between **Top-of-Funnel (ToFu)** marketing activity and **Bottom-of-Funnel (BoFu)** CRM revenue.
 
-### 1. The "Lead vs. Account" Isolation (Identity Resolution)
-* **The Problem:** Sales sells to "Accounts" (Companies), but Marketing acquires "Leads" (People). Anonymised traffic from Segment or Facebook doesn't natively map to Enterprise deals in HubSpot.
-* **The Solution:** We built `int_identity_resolution.sql` which isolates B2B domains (filtering out Gmail/Yahoo) via Window Functions (`FIRST_VALUE`), mapping every contact to a "Virtual Account". `fct_pipeline_revenue.sql` uses this to attribute $100K+ Closed Won deals to the very first marketing channel that touched the company's "Champion".
+By unifying data from **Google Ads, Meta, LinkedIn, HubSpot, and Segment**, this warehouse provides a single source of truth for Sales and Marketing alignment.
 
-### 2. Multi-Platform Schema Chaos (DRY Macros)
-* **The Problem:** Meta Ads costs are in cents. Google Ads are in micros. LinkedIn is in USD. Writing the same cleaning logic 3 times breaks the DRY principle and increases tech debt.
-* **The Solution:** Developed a central `generate_stg_ad_performance()` Jinja macro. It standardizes schemas, handles complex DuckDB implicit casting assertions, and reduces 200+ lines of SQL to just 15 lines of macro calls.
+### 🎯 Key Business Problems Solved
 
-### 3. Destruction of Historical Context (SCD Type 2)
-* **The Problem:** When a lead moves from MQL to SQL, HubSpot overrides their `lifecycle_stage`. Yesterday's data is lost forever, making it impossible to calculate exact *Pipeline Velocity* (e.g. "How long did it take this lead to become an SQL?").
-* **The Solution:** Configured `dbt snapshots` (YAML config driven, dbt v1.9+) using a `check` strategy on `lifecycle_stage`. Downstream, `int_contact_time_in_stage` calculates the exact `days_in_stage` metric for every lead.
+1.  **Lead-to-Account Matching (Identity Resolution):** Maps individual "leads" to "accounts" using email domain logic, allowing for true Account-Based Marketing (ABM) attribution.
+2.  **Revenue Attribution:** Connects marketing spend directly to Closed-Won deals. We attribute revenue to the *First Touch* of the entire company, not just the single converting contact.
+3.  **Pipeline Velocity Analysis:** Uses **SCD Type 2 (dbt Snapshots)** to track how long leads spend in each lifecycle stage (MQL -> SQL -> Deal), identifying bottleneck stages in the sales funnel.
+4.  **DRY Analytics Engineering:** Implements reusable Jinja macros to standardize ad performance across fragmented schemas (cents vs micros vs USD), reducing code volume by 80%.
 
 ---
 
-## 📦 Stack Breakdown
+## 🛠️ The Tech Stack
 
-| Layer | Component | Purpose |
+| Layer | Component | Description |
 |---|---|---|
-| **Ingestion** | `dlt` (Data Load Tool) / Python | Extracts API data from HubSpot, Meta, etc., and loads it into DuckDB. |
-| **Storage** | DuckDB | Blazing fast, local-first analytical database. |
-| **Transformation**| dbt Core | Dimensional modeling, data testing (`dbt_expectations`), SCD2 Snapshots. |
-| **Orchestration** | Dagster | Asset-based orchestration ensuring data runs sequentially. |
-| **Visualization** | Streamlit | Clean, interactive Python dashboards for RevOps teams. |
+| **Ingestion** | **dlt** (Data Load Tool) | Automated ELT pipelines extracting from CRM APIs into DuckDB. |
+| **Warehouse** | **DuckDB** | Fast, local-first analytical engine powering the warehouse. |
+| **Transformation** | **dbt Core** | Dimensional modeling (Star Schema), snapshots, and automated testing. |
+| **Orchestration** | **Dagster** | Asset-based orchestration managing the sequential flow of Ingestion -> dbt. |
+| **Visualization** | **Streamlit** | Real-time Python dashboard for ROI and Pipeline tracking. |
 
 ---
 
-## 🚀 Quick Start (dbt Only)
+## 🏛️ Warehouse Architecture
 
-Until the Dagster orchestrator is fully deployed, you can verify the dbt logic locally:
+We follow a modular **Medallion-inspired** architecture within dbt:
 
+*   **Staging (`stg_`)**: Standardized naming, `TRY_CAST` defensive typing, and `ROW_NUMBER` deduplication.
+*   **Intermediate (`int_`)**: The "Brain" of the warehouse. Handles Identity Resolution, Contact-to-Account mapping, and historical stage tracking.
+*   **Marts (`fct_`, `dim_`)**: Dashboard-ready tables.
+    *   `fct_pipeline_revenue`: The **Crown Jewel** linking marketing channels to actual dollars.
+    *   `dim_accounts`: A unified 360-view of B2B accounts.
+
+---
+
+## 📈 Dashboard Highlights
+
+Our **Streamlit** application (`streamlit_app.py`) provides mission-critical metrics:
+*   **Total ROI (Return on Investment):** Real-time spend vs. won revenue.
+*   **Win Rate by Channel:** Which acquisition channels deliver the highest quality leads?
+*   **Daily Spend Trends:** Cross-channel spend monitoring.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Requirements
+* Python 3.9+
+* dbt-core
+
+### 2. Setup & Execution
 ```bash
-# 1. Activate the environment
-source /home/farrux/data_projects/marketing_analytics/venv/bin/activate
-cd my_marketing_project
+# Clone the repository
+git clone https://github.com/farrux05-ai/lead-to-account.git
+cd lead-to-account/my_marketing_project
 
-# 2. Generate new B2B Mock Data seeds
-python scripts/generate_seeds.py
+# Set up environment
+pip install -r requirements.txt
 
-# 3. Load seeds & Build all metrics
-dbt seed --full-refresh
-dbt build
+# Run the full orchestrated pipeline (DLT + dbt Build)
+python scripts/dagster_orchestrator.py
+
+# Launch the dashboard
+streamlit run streamlit_app.py
 ```
 
 ---
 
-## 🧱 Data Layer Conventions
+## 🛡️ Data Quality & Testing
+We enforce strict data quality using `dbt_expectations`:
+*   **Domain Validity:** Ensures email domains are not free providers (Gmail/Yahoo) in the Account dimension.
+*   **Unique Keys:** Asserts surrogate key integrity across all fact tables.
+*   **Relationship Tests:** Validates that every Deal has an associated Account in the mart layer.
 
-* **Staging (`stg_*`)**: `TRY_CAST` defensive typing, `ROW_NUMBER` deduplication.
-* **Intermediate (`int_*`)**: Cross-source joins, Identity Resolution, Anomaly flags.
-* **Marts (`fct_*`, `dim_*`)**: Star schema. `fct_pipeline_revenue` is the Crown Jewel mapping Marketing acquisition to CRM Revenue.
+---
+
+## 🔗 Documentation
+Interactive lineage and data dictionary are hosted via GitHub Pages:
+👉 **[View Data Documentation](https://farrux05-ai.github.io/lead-to-account/)**

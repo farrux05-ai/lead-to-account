@@ -2,8 +2,38 @@
 -- MODEL: stg_hubspot__deals
 -- ============================================================================
 
-WITH source AS (
+WITH seed_source AS (
     SELECT * FROM {{ source('hubspot', 'hubspot_deals') }}
+),
+
+dlt_source AS (
+    SELECT * FROM {{ source('hubspot', 'hubspot_deals_incremental') }}
+),
+
+unioned AS (
+    SELECT 
+        deal_id,
+        contact_id,
+        deal_name,
+        deal_stage,
+        amount,
+        created_at,
+        closed_at,
+        _loaded_at
+    FROM seed_source
+    
+    UNION ALL
+    
+    SELECT 
+        deal_id,
+        contact_id,
+        deal_name,
+        deal_stage,
+        amount,
+        created_at,
+        closed_at,
+        _loaded_at
+    FROM dlt_source
 )
 
 SELECT
@@ -15,4 +45,4 @@ SELECT
     TRY_CAST(created_at AS TIMESTAMP)   AS created_at,
     TRY_CAST(closed_at AS TIMESTAMP)    AS closed_at,
     TRY_CAST(_loaded_at AS TIMESTAMP)   AS _loaded_at
-FROM source
+FROM unioned

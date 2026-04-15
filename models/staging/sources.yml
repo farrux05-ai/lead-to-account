@@ -28,6 +28,7 @@ sources:
     tables:
       - name: hubspot_contacts
       - name: hubspot_deals
+      - name: hubspot_deals_incremental
 
   - name: ga4
     description: Google Analytics 4 sessions data
