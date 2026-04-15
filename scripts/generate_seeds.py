@@ -57,10 +57,51 @@ def generate_linkedin_ads():
     wcsv(f"{BASE_DIR}/linkedin_ads/linkedin_ads_performance_daily.csv", perf)
 
 def generate_hubspot():
-    contacts = [{"contact_id": f"HSCT{i:05d}", "email": f"user{i}@example.com", "first_name": f"User{i}", "last_name": f"Last{i}", "lifecycle_stage": random.choice(["lead", "mql", "sql", "customer"]), "original_source": "PAID_SEARCH", "created_at": rand_date(), "merged_into_contact_id": None} for i in range(1, 101)]
+    b2b_domains = ['acme.com', 'stark.com', 'wayne.com', 'oscorp.com', 'cyberdyne.com', 'initech.com', 'hooli.com', 'piedpiper.com', 'umbrella.com', 'gmail.com', 'yahoo.com']
+    sources = ['PAID_SEARCH', 'PAID_SOCIAL', 'ORGANIC_SEARCH', 'DIRECT']
+    stages = ['lead', 'mql', 'sql', 'customer']
+    
+    contacts = []
+    deals = []
+    
+    # Generate 100 Contacts across 11 domains
+    for i in range(1, 101):
+        domain = random.choice(b2b_domains)
+        stage = random.choice(stages)
+        source = random.choice(sources)
+        contact_id = f"HSCT{i:05d}"
+        created_at = rand_date()
+        
+        contacts.append({
+            "contact_id": contact_id, 
+            "email": f"user{i}@{domain}", 
+            "first_name": f"User{i}", 
+            "last_name": f"Last{i}", 
+            "lifecycle_stage": stage, 
+            "original_source": source, 
+            "created_at": created_at, 
+            "merged_into_contact_id": None
+        })
+        
+        # If the contact is an SQL or Customer, 50% chance they have a Deal
+        if stage in ['sql', 'customer'] and random.random() > 0.5:
+            deal_stage = 'closed_won' if stage == 'customer' else random.choice(['discovery', 'presentation', 'negotiation', 'closed_lost'])
+            amount = random.randint(5000, 50000) if deal_stage != 'closed_lost' else 0
+            deals.append({
+                "deal_id": f"HSDL{len(deals)+1:05d}",
+                "contact_id": contact_id, # Single-contact association to keep it simple
+                "deal_name": f"{domain.upper().split('.')[0]} - Enterprise License",
+                "deal_stage": deal_stage,
+                "amount": amount,
+                "created_at": created_at,
+                "closed_at": rand_date() if deal_stage in ['closed_won', 'closed_lost'] else None,
+                "_loaded_at": NOW
+            })
+
     # merge test:
-    contacts.append({"contact_id": "HSCT00101", "email": "user1@example.com", "first_name": "User1", "last_name": "Last1", "lifecycle_stage": "lead", "original_source": "PAID_SEARCH", "created_at": rand_date(), "merged_into_contact_id": "HSCT00001"})
+    contacts.append({"contact_id": "HSCT00101", "email": "user1@acme.com", "first_name": "User1", "last_name": "Last1", "lifecycle_stage": "lead", "original_source": "PAID_SEARCH", "created_at": rand_date(), "merged_into_contact_id": "HSCT00001"})
     wcsv(f"{BASE_DIR}/hubspot/hubspot_contacts.csv", contacts)
+    wcsv(f"{BASE_DIR}/hubspot/hubspot_deals.csv", deals)
 
 def generate_ga4():
     sess = []

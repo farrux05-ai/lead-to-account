@@ -27,6 +27,7 @@ sources:
     schema: main_raw_hubspot
     tables:
       - name: hubspot_contacts
+      - name: hubspot_deals
 
   - name: ga4
     description: Google Analytics 4 sessions data
