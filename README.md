@@ -1,6 +1,6 @@
 # Lead-to-Account: B2B SaaS RevOps Revenue Engine
 
-> **High-Performance Marketing Analytics Warehouse** mapping the entire B2B Customer Journey — from anonymous Ad clicks to $100K+ Enterprise Deals.
+> **Marketing Analytics Warehouse** — Reklama klikidan tortib $100K+ Enterprise Bitishuvigacha bo'lgan to'liq B2B Customer Journey'ni bir platformada kuzating.
 
 [![dbt Docs](https://img.shields.io/badge/Documentation-dbt--Docs-FF694B)](https://farrux05-ai.github.io/lead-to-account/)
 [![Stack](https://img.shields.io/badge/Stack-Modern--Data--Stack-blue)](https://github.com/farrux05-ai/lead-to-account)
@@ -8,84 +8,105 @@
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Loyiha Arxitekturasi
 
-Our Modern Data Stack (MDS) architecture is designed for speed, scale, and cross-channel visibility. It bridges the gap between Marketing activity and CRM Revenue.
+Loyiha **to'liq avtomatlashtirilgan** ma'lumotlar konveyeri (pipeline) asosida qurilgan. Har bir qator ma'lumot quyidagi bosqichlardan o'tadi:
+
+```
+HubSpot CRM (Mock API)
+        │  dlt (Data Load Tool)
+        ▼
+    DuckDB (Local Warehouse)
+        │  dbt Core (50+ modell va test)
+        ▼
+   Staging → Intermediate → Marts
+        │  Dagster (Orchestration)
+        ▼
+   Streamlit Dashboard
+```
 
 ![Data Pipeline Architecture](screenshots/data_pipeline_architecture.svg)
 
-### The Functional Layers:
-*   **Ingestion (ELT):** **dlt** (Data Load Tool) extracts raw data from HubSpot and Mock APIs directly into DuckDB.
-*   **Warehouse:** **DuckDB** serves as the high-performance local analytical core.
-*   **Transformation & Modeling:** **dbt Core** handles the heavy lifting—from modular staging to complex identity resolution and final revenue marts.
-*   **Orchestration:** **Dagster** manages "Software-Defined Assets," ensuring that data is only transformed once the ingestion layer successfully lands.
-*   **BI & Visualization:** **Streamlit** provides an interactive, B2B-tailored cockpit for RevOps teams.
+### Stack:
+| Qatlam | Vosita | Vazifasi |
+|---|---|---|
+| **Ingestion** | `dlt` | HubSpot'dan ma'lumotlarni avtomatik yuklash |
+| **Warehouse** | `DuckDB` | Mahalliy, tezkor analitik omborxona |
+| **Transformation** | `dbt Core` | 3 qatlamli ma'lumot modellashtirish |
+| **Orchestration** | `Dagster` | Asset-based pipeline boshqaruvi |
+| **Visualization** | `Streamlit` | Interaktiv RevOps dashboardi |
 
 ---
 
-## 📸 Live Full-Funnel Dashboard
+## ⚙️ Dagster Orkestratsiyasi (Asset Lineage)
 
-Our **Full-Funnel Platform** provides real-time visibility into the B2B revenue engine.
+Loyiha **`dagster-dbt`** integratsiyasi orqali har bir dbt modelini alohida "asset" sifatida boshqaradi. Bu shuni anglatadiki — qaysi model qachon ishlagani, uning bog'liqliklari va holati Dagster UI orqali to'liq nazorat qilinadi.
 
-### 1. Revenue & ROI Overview
-Tracks Closed-Won dollars directly back to original marketing sources.
+![Dagster Asset Lineage](screenshots/dagster_linage.png)
+
+> Yuqoridagi rasmda **56 ta dbt modeli** (staging, intermediate, marts) va ularning o'zaro bog'liqligi (lineage) ko'rsatilgan. Ingestion jarayoni muvaffaqiyatli bo'lgandan keyingina transformatsiya boshladi.
+
+---
+
+## 📊 To'liq Funnel Dashboard
+
+### 1. KPI va Daromad Nazorati
+Marketing xarajatlari va yopilgan bitishuvlar orasidagi to'g'ridan-to'g'ri aloqa.
 ![Revenue Performance](screenshots/kpi.png)
 
-### 2. Ad Efficiency (CPC & CTR)
-Monitors platform-wide spend and identifies high-engagement, low-cost channels.
+### 2. Platforma Samaradorligi (CPC & CTR)
+Qaysi reklama platforma eng arzon va eng samarali ekanligini ko'rsatadi.
 ![Ad Efficiency](screenshots/platform_effciency.png)
 
-### 3. Traffic & Engagement (GA4)
-Visualizes daily session trends and traffic mix from Google Analytics 4.
+### 3. Traffic va Sessiyalar (GA4)
+Kunlik trafik oqimi va manbalar bo'yicha taqsimot.
 ![GA4 Traffic](screenshots/traffic_source_daily_session.png)
 
-### 4. Lead Funnel & Velocity
-Tracks the progression of MQLs, SQLs, and Deals through the sales pipeline.
+### 4. Lead Funnel
+MQL → SQL → Deal bosqichlarida qancha lead qolayotgani va qanchasi yo'qolayotgani.
 ![Lead Funnel](screenshots/lead_by_stage.png)
 
----
-
-## 🧠 Data Engineering & Lineage
-
-The warehouse architecture follows a strict **Medallion-inspired** modular structure. We ensure data integrity through 50+ automated dbt tests and detailed lineage tracking.
-
+### 5. dbt Data Lineage
+Ma'lumot qayerdan keladi va qaysi modellarga ta'sir qiladi — to'liq grafik ko'rinishida.
 ![Data Lineage](screenshots/linage_of_data.png)
 
-### Key Engineering Features:
-*   **Identity Resolution:** Maps floating Leads to Virtual Accounts based on domain intelligence.
-*   **SCD Type 2 Tracking:** Uses dbt Snapshots to monitor historical CRM lifecycle changes.
-*   **Currency Normalization:** Standardizes multi-currency ad spend into a unified USD reporting layer using custom Jinja macros.
-
 ---
 
-## 🚀 Getting Started
+## 🚀 Ishga Tushirish
 
-### 1. Setup & Execution
 ```bash
-# Clone and enter the project
+# 1. Repozitoriyani klonlash
 git clone https://github.com/farrux05-ai/lead-to-account.git
 cd lead-to-account/my_marketing_project
 
-# Install dependencies
+# 2. Virtual muhit yaratish va kutubxonalarni o'rnatish
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 
-# Run the full orchestrated pipeline (Injest + Model + Test)
-python scripts/dagster_orchestrator.py
+# 3. dbt paketlarini yuklash
+dbt deps
 
-# Launch the BI platform
+# 4. To'liq pipeline'ni ishga tushirish (Ingestion + Modeling + Testing)
+dagster asset materialize --select "*" -f scripts/dagster_orchestrator.py
+
+# 5. Dashboardni ochish
 streamlit run streamlit_app.py
 ```
 
 ---
 
-## 🛡️ Data Quality
-We enforce strict B2B data quality using `dbt_expectations`:
-*   **Domain Validity:** Prevents free-tier emails (Gmail/Yahoo) from polluting account metrics.
-*   **Surrogate Integrity:** Ensures 100% join rates across dimensional and fact models.
-*   **Relationship Mapping:** Validates that every deal is anchored to a resolved account.
+## 🛡️ Ma'lumotlar Sifati
+
+Loyiha `dbt_expectations` orqali qat'iy sifat nazoratini amalga oshiradi:
+- **Domain validatsiyasi:** Gmail/Yahoo kabi bepul email domenlarini B2B hisobotlaridan chiqaradi.
+- **Surrogat kalit yaxlitligi:** Barcha dimension va fact jadvallarida 100% join darajasini ta'minlaydi.
+- **Identity Resolution:** Floating lead'larni domen razvedkasi asosida Virtual Accountlarga birlashtiradi.
+- **SCD Type 2:** dbt Snapshots orqali CRM lifecycle tarixiy o'zgarishlarini kuzatadi.
 
 ---
 
-## 🔗 Interactive Documentation
-The full model documentation, interactive lineage, and data dictionary are hosted here:
-👉 **[View Project Documentation](https://farrux05-ai.github.io/lead-to-account/)**
+## 🔗 Foydali Havolalar
+
+- 📚 **[Interaktiv dbt Dokumentatsiyasi](https://farrux05-ai.github.io/lead-to-account/)** — To'liq model katalogi va lineage
+- 🐙 **[GitHub Repo](https://github.com/farrux05-ai/lead-to-account)** — Barcha manba kodlar
