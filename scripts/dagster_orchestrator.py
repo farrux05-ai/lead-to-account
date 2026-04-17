@@ -1,79 +1,92 @@
 """
-Dagster Orchestration — B2B RevOps Pipeline
-============================================
-Defines the full asset graph:
-  1. extract_hubspot_dlt   → Ingests new CRM deals via dlt (daily)
-  2. transform_warehouse_dbt → Rebuilds all dbt models after ingestion
-
-Run locally:
-  dagster dev -f scripts/dagster_orchestrator.py
-
-Access the Dagster UI at: http://localhost:3000
+Dagster Orchestration — B2B RevOps Pipeline (Granular dbt Tracking)
+==================================================================
+Defines the full asset graph with granular dbt models.
 """
 
 from dagster import (
-    asset,
-    Definitions,
-    ScheduleDefinition,
-    define_asset_job,
     AssetExecutionContext,
+    Definitions,
+    asset,
+    define_asset_job,
+    ScheduleDefinition,
+)
+from dagster_dbt import (
+    DbtCliResource,
+    dbt_assets,
+    DagsterDbtTranslator,
+    get_asset_key_for_source,
 )
 import subprocess
 import os
+import sys
+from pathlib import Path
 
+# ── 1. dbt Configuration ──────────────────────────────────────────────────────
+# Full path to the dbt project and venv
+PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+DBT_PROJECT_DIR = PROJECT_ROOT
+DB_PATH = DBT_PROJECT_DIR / "dev.duckdb"
 
+# Resource to manage dbt CLI calls
+dbt_resource = DbtCliResource(
+    project_dir=os.fspath(DBT_PROJECT_DIR),
+    dbt_executable=os.fspath(DBT_PROJECT_DIR / "venv" / "bin" / "dbt"),
+    profiles_dir=os.path.expanduser("~/.dbt"),
+)
+
+# Path to the manifest file
+MANIFEST_PATH = DBT_PROJECT_DIR / "target" / "manifest.json"
+
+# Custom Translator to link dbt sources to Dagster assets
+class MarketingTranslator(DagsterDbtTranslator):
+    def get_asset_key(self, dbt_resource_props):
+        return super().get_asset_key(dbt_resource_props)
+
+# ── 2. Ingestion Asset (dlt) ──────────────────────────────────────────────────
 @asset(group_name="ingestion")
 def extract_hubspot_dlt(context: AssetExecutionContext):
     """
-    Step 1: Extract mock Deals using DLT and load into DuckDB.
-    This acts as the daily 'Ingestion' step.
-
-    Production: Set HUBSPOT_API_KEY env variable, and update
-    the dlt_hubspot_pipeline.py resource to call the real API.
+    Ingests HubSpot CRM data using the DLT library.
     """
-    script_path = os.path.join(os.path.dirname(__file__), "dlt_hubspot_pipeline.py")
-    result = subprocess.run(["python", script_path], capture_output=True, text=True, check=True)
-    context.log.info(result.stdout)
-    return "DLT Ingestion successful"
-
-
-@asset(group_name="transformation", deps=[extract_hubspot_dlt])
-def transform_warehouse_dbt(context: AssetExecutionContext):
-    """
-    Step 2: Transform the loaded raw data using dbt.
-    Runs only after DLT successfully pulls new data.
-
-    Uses `dbt build` which runs all models + tests in one command,
-    ensuring data quality gates are enforced before marts are materialized.
-    """
-    project_root = os.path.dirname(os.path.dirname(__file__))
+    script_path = PROJECT_ROOT / "scripts" / "dlt_hubspot_pipeline.py"
     result = subprocess.run(
-        ["dbt", "build"],
-        cwd=project_root,
-        capture_output=True,
-        text=True,
+        [sys.executable, str(script_path)], 
+        capture_output=True, 
+        text=True, 
         check=True
     )
     context.log.info(result.stdout)
-    return "dbt transformation successful"
+    return "Ingestion successful"
 
+# ── 3. Granular dbt Assets ────────────────────────────────────────────────────
+# This decorator automatically maps all models in manifest.json to Dagster assets
+@dbt_assets(
+    manifest=MANIFEST_PATH,
+    dagster_dbt_translator=MarketingTranslator(),
+)
+def marketing_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    # Run the dbt models
+    yield from dbt.cli(["build"], context=context).stream()
 
-# ── Job & Schedule Definition ──────────────────────────────────────────────────
-# Wraps the two assets into a single runnable job.
-daily_revops_job = define_asset_job(
-    name="daily_revops_pipeline",
-    selection=[extract_hubspot_dlt, transform_warehouse_dbt],
+# ── 4. Job & Definitions ──────────────────────────────────────────────────────
+# Job to run the whole pipeline
+revops_pipeline_job = define_asset_job(
+    name="revops_full_pipeline",
+    selection="*",
 )
 
-# Triggers the job every day at 06:00 UTC (before business hours start).
+# Daily Schedule
 daily_schedule = ScheduleDefinition(
-    job=daily_revops_job,
-    cron_schedule="0 6 * * *",  # 6:00 AM UTC daily
-    name="daily_06_utc_schedule",
+    job=revops_pipeline_job,
+    cron_schedule="0 6 * * *",
 )
 
 defs = Definitions(
-    assets=[extract_hubspot_dlt, transform_warehouse_dbt],
-    jobs=[daily_revops_job],
+    assets=[extract_hubspot_dlt, marketing_dbt_assets],
+    resources={
+        "dbt": dbt_resource,
+    },
+    jobs=[revops_pipeline_job],
     schedules=[daily_schedule],
 )

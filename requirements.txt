@@ -22,6 +22,7 @@ dlt==1.25.0
 # ── Orchestration ──────────────────────────────────────────
 dagster==1.13.0
 dagster-webserver==1.13.0
+dagster-dbt==0.29.0
 
 # ── Visualization ──────────────────────────────────────────
 streamlit==1.56.0

@@ -23,3 +23,10 @@ venv/
 .dlt/
 pip_install.sh
 *pipeline_data/
+
+# Dagster
+.tmp_dagster_home_*
+
+# Databases
+*.duckdb
+*.db
